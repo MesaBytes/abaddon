@@ -1,27 +1,34 @@
-set(NLOHMANN_JSON_LIBRARY_NAME nlohmann_json)
+function (add_imported_library headers)
+    add_library(nlohmann_json::nlohmann_json INTERFACE IMPORTED)
+    set_target_properties(nlohmann_json::nlohmann_json PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES ${headers}
+    )
+    set(nlohmann_json_FOUND 1 CACHE
+        INTERNAL "nlohmann_json found" FORCE)
+    set(nlohmann_json_INCLUDES ${headers}
+        CACHE STRING "Path to nlohmann_json headers" FORCE)
+    mark_as_advanced(FORCE nlohmann_json_INCLUDES)
+endfunction ()
 
-find_package(PkgConfig)
-if(PKG_CONFIG_FOUND)
-    pkg_check_modules(PC_NLOHMANN_JSON QUIET ${NLOHMANN_JSON_LIBRARY_NAME})
-    set(NLOHMANN_JSON_DEFINITIONS ${PC_NLOHMANN_JSON_CFLAGS_OTHER})
-endif()
+if (nlohmann_json_INCLUDES)
+    add_imported_library(${nlohmann_json_INCLUDES})
+    return()
+endif ()
 
-set(NLOHMANN_JSON_INCLUDE_HINTS ${PC_NLOHMANN_JSON_INCLUDEDIR}  ${PC_NLOHMANN_JSON_INCLUDE_DIRS})
-
-set(NLOHMANN_JSON_ROOT_DIR "$ENV{NLOHMANN_JSON_ROOT_DIR}")
-
-find_path(NLOHMANN_JSON_INCLUDE_DIR
-          NAMES nlohmann/json.hpp
-          PATHS $ENV{PROGRAMFILES}/include/
-                ${NLOHMANN_JSON_ROOT_DIR}/
-                ${NLOHMANN_JSON_ROOT_DIR}/include/
-          HINTS ${NLOHMANN_JSON_INCLUDE_HINTS})
-
-set(NLOHMANN_JSON_INCLUDE_DIRS ${NLOHMANN_JSON_INCLUDE_DIR})
-set(NLOHMANN_JSON_LIBRARIES    "")
+file(TO_CMAKE_PATH "$ENV{nlohmann_json_DIR}" _nlohmann_json_DIR)
+find_path(nlohmann_json_HEADER_PATH NAMES nlohmann/json.hpp
+    PATHS
+        ${_nlohmann_json_DIR}/include
+        /usr/include
+)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(nlohmann_json
-                                  REQUIRED_VARS
-                                    NLOHMANN_JSON_INCLUDE_DIR
-                                  VERSION_VAR NLOHMANN_JSON_VERSION)
+find_package_handle_standard_args(
+    nlohmann_json
+    DEFAULT_MSG
+    nlohmann_json_HEADER_PATH
+)
+
+if (nlohmann_json_FOUND)
+    add_imported_library("${nlohmann_json_HEADER_PATH}")
+endif ()
